@@ -1,0 +1,9 @@
+name: AABB
+description: An Axis-Aligned Bounding-Box Tree Data strucure used for culling
+version: 0.1.0
+
+dev_dependencies:
+  test: "^0.12.32+1"
+
+assets:
+    - assets/level.txt
