@@ -4,16 +4,46 @@ import "dart:math";
 
 const int AABBExtension = 10;
 const double AABBMultiplier = 2.0;
+
+typedef bool QueryCallback<T>(int id, T userData);
+
 /// Float32List containing the coordinates of the Axis-Aligned Bounding Box of an object. 
 /// Coordinates are stored as [x1, y1, x2, y2]
 class AABB
 {
-	static Float32List create()
+	Float32List _buffer;
+
+	Float32List get values
 	{
-		return new Float32List(4);
+		return _buffer;
 	}
 
-	static Float32List copy(Float32List out, Float32List a)
+	AABB()
+	{
+		this._buffer = new Float32List.fromList([0.0, 0.0, 0.0, 0.0]);
+	}
+
+	AABB.clone(AABB a)
+	{
+		this._buffer = new Float32List.fromList(a.values);
+	}
+
+	AABB.fromValues(double a, double b, double c, double d)
+	{
+		_buffer = new Float32List.fromList([a, b, c, d]);
+	}
+
+	double operator[](int idx)
+	{
+		return this._buffer[idx];
+	}
+
+	operator[]=(int idx, double v)
+	{
+		this._buffer[idx] = v;
+	}
+
+	static AABB copy(AABB out, AABB a)
 	{
 		out[0] = a[0];
 		out[1] = a[1];
@@ -22,42 +52,35 @@ class AABB
 		return out;
 	}
 
-	static Float32List clone(Float32List a)
-	{
-		Float32List out = new Float32List(4);
-		AABB.copy(out, a);
-		return out;
-	}
-
-	static Float32List center(Float32List out, Float32List a)
+	static AABB center(AABB out, AABB a)
 	{
 		out[0] = (a[0] + a[2]) * 0.5;
 		out[1] = (a[1] + a[3]) * 0.5;
 		return out;
 	}
 
-	static Float32List size(Float32List out, Float32List a)
+	static AABB size(AABB out, AABB a)
 	{
 		out[0] = a[2] - a[0];
 		out[1] = a[3] - a[1];
 		return out;
 	}
 
-	static Float32List extents(Float32List out, Float32List a)
+	static AABB extents(AABB out, AABB a)
 	{
 		out[0] = (a[2] - a[0]) * 0.5;
 		out[1] = (a[3] - a[1]) * 0.5;
 		return out;
 	}
 
-	static double perimeter(Float32List a)
+	static double perimeter(AABB a)
 	{
 		double wx = a[2] - a[0];
 		double wy = a[3] - a[1];
 		return 2.0 * (wx + wy);
 	}
 
-	static Float32List combine(Float32List out, Float32List a, Float32List b)
+	static AABB combine(AABB out, AABB a, AABB b)
 	{
 		out[0] = min(a[0], b[0]);
 		out[1] = min(a[1], b[1]);
@@ -66,12 +89,12 @@ class AABB
 		return out;
 	}
 
-	static bool contains(Float32List a, Float32List b)
+	static bool contains(AABB a, AABB b)
 	{
 		return a[0] <= b[0] && a[1] <= b[1] && b[2] <= a[2] && b[3] <= a[3];
 	}
 
-	static bool isValid(Float32List a)
+	static bool isValid(AABB a)
 	{
 		double dx = a[2] - a[0];
 		double dy = a[3] - a[1];
@@ -86,13 +109,13 @@ class TreeNode<T>
 	int _parentOrNext = 0;
 	int _child1 = NullNode;
 	int _child2 = NullNode;
-	Float32List _AABB = AABB.create();
+	AABB _AABB = new AABB();
 	int _height = -1;
 	T _userData;
 
 	TreeNode();
 
-	Float32List get BB
+	AABB get BB
 	{
 		return this._AABB;
 	}
@@ -237,7 +260,7 @@ class Tree<T>
 		this._nodeCount--;
 	}
 
-	int createProxy(Float32List aabb, T userData)
+	int createProxy(AABB aabb, T userData)
 	{
 		int proxyId = this.allocateNode();
 		TreeNode node = this._nodes[proxyId];
@@ -270,7 +293,7 @@ class Tree<T>
 		this.freeNode(proxyId);
 	}
 
-	bool placeProxy(int proxyId, Float32List aabb)
+	bool placeProxy(int proxyId, AABB aabb)
 	{
 		if(proxyId == null || proxyId < 0 || proxyId >= this._capacity)
 		{
@@ -290,7 +313,7 @@ class Tree<T>
 
 		this.removeLeaf(proxyId);
 
-		Float32List extended = AABB.clone(aabb);
+		AABB extended = new AABB.clone(aabb);
 		extended[0] = aabb[0] - AABBExtension;
 		extended[1] = aabb[1] - AABBExtension;
 		extended[2] = aabb[2] + AABBExtension;
@@ -301,7 +324,7 @@ class Tree<T>
 		return true;
 	}
 
-	bool moveProxy(int proxyId, Float32List aabb, Float32List displacement)
+	bool moveProxy(int proxyId, AABB aabb, AABB displacement)
 	{
 		if(proxyId < 0 || proxyId >= this._capacity)
 		{
@@ -321,7 +344,7 @@ class Tree<T>
 
 		this.removeLeaf(proxyId);
 
-		Float32List extended = AABB.clone(aabb);
+		AABB extended = new AABB.clone(aabb);
 		extended[0] = aabb[0] - AABBExtension;
 		extended[1] = aabb[1] - AABBExtension;
 		extended[2] = aabb[2] + AABBExtension;
@@ -366,7 +389,7 @@ class Tree<T>
 		}
 
 		// Find the best sibling for this node
-		Float32List leafAABB = nodes[leaf].BB;
+		AABB leafAABB = nodes[leaf].BB;
 		int index = this._root;
 		
 		while(nodes[index].isLeaf == false)
@@ -376,7 +399,7 @@ class Tree<T>
 
 			double area = AABB.perimeter(nodes[index].BB);
 
-			Float32List combinedAABB = AABB.combine(AABB.create(), nodes[index].BB, leafAABB);
+			AABB combinedAABB = AABB.combine(new AABB(), nodes[index].BB, leafAABB);
 			double combinedArea = AABB.perimeter(combinedAABB);
 
 			// Cost of creating a new parent for this node and the new leaf
@@ -389,12 +412,12 @@ class Tree<T>
 			double cost1;
 			if(nodes[child1].isLeaf)
 			{
-				Float32List aabb = AABB.combine(AABB.create(), leafAABB, nodes[child1].BB);
+				AABB aabb = AABB.combine(new AABB(), leafAABB, nodes[child1].BB);
 				cost1 = AABB.perimeter(aabb) + inheritanceCost;
 			}
 			else
 			{
-				Float32List aabb = AABB.combine(AABB.create(), leafAABB, nodes[child1].BB);
+				AABB aabb = AABB.combine(new AABB(), leafAABB, nodes[child1].BB);
 				double oldArea = AABB.perimeter(nodes[child1].BB);
 				double newArea = AABB.perimeter(aabb);
 				cost1 = (newArea - oldArea) + inheritanceCost;
@@ -403,12 +426,12 @@ class Tree<T>
 			double cost2;
 			if(nodes[child2].isLeaf)
 			{
-				Float32List aabb = AABB.combine(AABB.create(), leafAABB, nodes[child2].BB);
+				AABB aabb = AABB.combine(new AABB(), leafAABB, nodes[child2].BB);
 				cost2 = AABB.perimeter(aabb) + inheritanceCost;
 			}
 			else
 			{
-				Float32List aabb = AABB.combine(AABB.create(), leafAABB, nodes[child2].BB);
+				AABB aabb = AABB.combine(new AABB(), leafAABB, nodes[child2].BB);
 				double oldArea = AABB.perimeter(nodes[child2].BB);
 				double newArea = AABB.perimeter(aabb);
 				cost2 = (newArea - oldArea) + inheritanceCost;
@@ -900,7 +923,7 @@ class Tree<T>
 			throw new StateError("Expected node's height to be ${height}");
 		}
 
-		Float32List aabb = AABB.combine(AABB.create(), nodes[child1].BB, nodes[child2].BB);
+		AABB aabb = AABB.combine(new AABB(), nodes[child1].BB, nodes[child2].BB);
 
 		if(aabb[0] != node.BB[0] || aabb[1] != node.BB[1])
 		{
@@ -975,12 +998,12 @@ class Tree<T>
 		return this._nodes[proxyId].userData;
 	}
 
-	Float32List getFatAABB(int proxyId)
+	AABB getFatAABB(int proxyId)
 	{
 		return this._nodes[proxyId].BB;
 	}
 
-	all(Function callback)
+	all(QueryCallback callback)
 	{
 		List<TreeNode> nodes = this._nodes;
 		ListQueue stack = new ListQueue();
@@ -1012,7 +1035,7 @@ class Tree<T>
 		}
 	}
 
-	query(Function callback, Float32List aabb)
+	query(QueryCallback callback, AABB aabb)
 	{
 		List<TreeNode> nodes = this._nodes;
 		ListQueue stack = new ListQueue();
@@ -1048,7 +1071,7 @@ class Tree<T>
 	}
 }
 
-bool testOverlap(Float32List a, Float32List b)
+bool testOverlap(AABB a, AABB b)
 {
 	double d1x = b[0] - a[2];
 	double d1y = b[1] - a[3];
