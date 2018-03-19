@@ -100,6 +100,12 @@ class AABB
 		double dy = a[3] - a[1];
 		return dx >= 0 && dy >= 0 && a[0] <= double.MAX_FINITE && a[1] <= double.MAX_FINITE && a[2] <= double.MAX_FINITE && a[3] <= double.MAX_FINITE;
 	}
+
+	@override
+	String toString()
+	{
+		return _buffer.toString();
+	}
 }
 
 const int NullNode = -1;
