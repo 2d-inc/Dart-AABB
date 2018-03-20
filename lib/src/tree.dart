@@ -52,21 +52,21 @@ class AABB
 		return out;
 	}
 
-	static AABB center(AABB out, AABB a)
+	static Float32List center(Float32List out, AABB a)
 	{
 		out[0] = (a[0] + a[2]) * 0.5;
 		out[1] = (a[1] + a[3]) * 0.5;
 		return out;
 	}
 
-	static AABB size(AABB out, AABB a)
+	static Float32List size(Float32List out, AABB a)
 	{
 		out[0] = a[2] - a[0];
 		out[1] = a[3] - a[1];
 		return out;
 	}
 
-	static AABB extents(AABB out, AABB a)
+	static Float32List extents(Float32List out, AABB a)
 	{
 		out[0] = (a[2] - a[0]) * 0.5;
 		out[1] = (a[3] - a[1]) * 0.5;
@@ -1067,11 +1067,11 @@ class Tree<T>
 						return;
 					}
 				}
-			}
-			else
-			{
-				stack.addLast(node.child1);
-				stack.addLast(node.child2);
+				else
+				{
+					stack.addLast(node.child1);
+					stack.addLast(node.child2);
+				}
 			}
 		}
 	}
